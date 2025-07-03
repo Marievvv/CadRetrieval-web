@@ -6,6 +6,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - flask=2.0.1
+  - flask-sqlalchemy
+  - requests
   - python=3.9
   - occwl=1.0
   - pytorch=1.8

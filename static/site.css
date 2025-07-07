@@ -1,0 +1,21 @@
+body {
+  font-family: Verdana, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+form {
+  margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  align-items: center;
+  font-size: 18px;
+}
+
+select {
+  padding: 8px 12px;
+  font-size: 16px;
+}
+

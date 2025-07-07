@@ -3,7 +3,7 @@ import torchmetrics
 import torch
 from torch import nn
 import torch.nn.functional as F
-import uvnet.encoders
+import model.uvnet.encoders
 
 
 class _NonLinearClassifier(nn.Module):
@@ -82,13 +82,13 @@ class UVNetClassifier(nn.Module):
             dropout (float, optional): Dropout for the final non-linear classifier. Defaults to 0.3.
         """
         super().__init__()
-        self.curv_encoder = uvnet.encoders.UVNetCurveEncoder(
+        self.curv_encoder = model.uvnet.encoders.UVNetCurveEncoder(
             in_channels=6, output_dims=crv_emb_dim
         )
-        self.surf_encoder = uvnet.encoders.UVNetSurfaceEncoder(
+        self.surf_encoder = model.uvnet.encoders.UVNetSurfaceEncoder(
             in_channels=7, output_dims=srf_emb_dim
         )
-        self.graph_encoder = uvnet.encoders.UVNetGraphEncoder(
+        self.graph_encoder = model.uvnet.encoders.UVNetGraphEncoder(
             srf_emb_dim, crv_emb_dim, graph_emb_dim,
         )
         self.clf = _NonLinearClassifier(graph_emb_dim, num_classes, dropout)
@@ -213,15 +213,15 @@ class UVNetSegmenter(nn.Module):
         """
         super().__init__()
         # A 1D convolutional network to encode B-rep edge geometry represented as 1D UV-grids
-        self.curv_encoder = uvnet.encoders.UVNetCurveEncoder(
+        self.curv_encoder = model.uvnet.encoders.UVNetCurveEncoder(
             in_channels=crv_in_channels, output_dims=crv_emb_dim
         )
         # A 2D convolutional network to encode B-rep face geometry represented as 2D UV-grids
-        self.surf_encoder = uvnet.encoders.UVNetSurfaceEncoder(
+        self.surf_encoder = model.uvnet.encoders.UVNetSurfaceEncoder(
             in_channels=7, output_dims=srf_emb_dim
         )
         # A graph neural network that message passes face and edge features
-        self.graph_encoder = uvnet.encoders.UVNetGraphEncoder(
+        self.graph_encoder = model.uvnet.encoders.UVNetGraphEncoder(
             srf_emb_dim, crv_emb_dim, graph_emb_dim,
         )
         # A non-linear classifier that maps face embeddings to face logits
@@ -380,13 +380,13 @@ class UVNetContrast(nn.Module):
             dropout (float, optional): Dropout for the final non-linear classifier. Defaults to 0.3.
         """
         super().__init__()
-        self.curv_encoder = uvnet.encoders.UVNetCurveEncoder(
+        self.curv_encoder = model.uvnet.encoders.UVNetCurveEncoder(
             in_channels=6, output_dims=crv_emb_dim
         )
-        self.surf_encoder = uvnet.encoders.UVNetSurfaceEncoder(
+        self.surf_encoder = model.uvnet.encoders.UVNetSurfaceEncoder(
             in_channels=7, output_dims=srf_emb_dim
         )
-        self.graph_encoder = uvnet.encoders.UVNetGraphEncoder(
+        self.graph_encoder = model.uvnet.encoders.UVNetGraphEncoder(
             srf_emb_dim, crv_emb_dim, graph_emb_dim,
         )
         self.clf = _NonLinearClassifier(graph_emb_dim, out_emb_dim, dropout)

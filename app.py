@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory, url_for
 import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 from model.uvnet.models import Contrast
@@ -17,15 +17,27 @@ model_weights = "model/best.ckpt"
 model = Contrast.load_from_checkpoint(model_weights)
 db = VectorDatabase(vector_db_folder, vector_db_name)
 
+@app.route('/data/FABWave/<path:category>/<path:filename>')
+def serve_model_image(category, filename):
+    return send_from_directory(os.path.join(data_path, category), filename)
+
 def get_categories():
-    return [d for d in os.listdir(data_path) if os.path.isdir(os.path.join(data_path, d))]
+    return [d for d in os.listdir(data_path) 
+            if os.path.isdir(os.path.join(data_path, d))]
 
 def get_jpeg_models(category):
     jpeg_path = os.path.join(data_path, category, "JPEG")
     if not os.path.exists(jpeg_path):
         return []
-    return [f for f in os.listdir(jpeg_path) 
-            if f.lower().endswith(('.jpg', '.jpeg'))]
+    return [
+        {
+            'filename': f,
+            'name': f.replace('.jpg', ''),
+            'url': url_for('serve_model_image', category=f'{category}/JPEG', filename=f)
+        }
+        for f in os.listdir(jpeg_path)
+        if f.lower().endswith(('.jpg', '.jpeg'))
+    ]
 
 def get_models_in_category(category):
     bin_path = os.path.join(data_path, category, "bin")
@@ -81,7 +93,7 @@ def index():
     error = None
 
     if request.method == 'POST':
-        selected_category = request.form.get('category')
+        selected_category = request.form.get('category') or request.form.get('selected_category')
         top_k = int(request.form.get('top_k'))
 
         if selected_category:

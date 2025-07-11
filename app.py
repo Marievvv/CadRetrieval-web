@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, send_from_directory, url_for
 import os
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
+import torch
 from model.uvnet.models import Contrast
 from model.retrieval.vector_db import VectorDatabase
 from dgl.data.utils import load_graphs
@@ -60,10 +60,7 @@ def find_similar_models(category, model_name, top_k):
     graph.ndata["x"] = graph.ndata["x"].type(FloatTensor)
     graph.edata["x"] = graph.edata["x"].type(FloatTensor)
 
-    print("Starting model prediction")
-
     query_vector = model.predict_one(graph).cpu().numpy()
-    print("Prediction completed")
     retrieval_topk = db.search(query_vector, k=top_k)
     return retrieval_topk
 
@@ -86,28 +83,12 @@ def format_similar_models(results):
             })
     return formatted_list
 
-def get_sample_models(category, count=3): # для проверки вывода
-    jpeg_models = get_jpeg_models(category)
-    if not jpeg_models or len(jpeg_models) < count:
-        return []
-    
-    sample_models = jpeg_models[:count]
-    formatted = []
-    for model in sample_models:
-        formatted.append({
-            'name': model['name'],
-            'category': category,
-            'url': model['url'],  
-            'distance': 0.0  
-        })
-    return formatted
-
 @app.route("/", methods=['GET', 'POST'])
 
 def index():
     categories = get_categories()
     selected_category = None
-    models = [] # для списка моделей, которые надо загружить после выбора категории
+    models = [] 
     selected_model = None
     top_k = 5
     similar_models = []
@@ -118,16 +99,14 @@ def index():
         top_k = int(request.form.get('top_k'))
         selected_model = request.form.get('selected_model')
 
-        print(f"category={selected_category}, model={selected_model}, top_k={top_k}")
         if selected_category and not selected_model:
             models = get_jpeg_models(selected_category)
             if not models:
                 error = f"No jpeg models found in category {selected_category}"
+
         if selected_model and selected_category:
             results = find_similar_models(selected_category, selected_model, top_k)
             similar_models = format_similar_models(results)
-                    
-            
 
     return render_template(
         "index.html",

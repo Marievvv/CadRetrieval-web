@@ -28,7 +28,7 @@
   <!-- кол-во результатов -->
   <div>
     <label for="top_k">Количество совпадений (от 1 до 10):</label>
-    <select name="top_k" id="top_k">
+    <select name="top_k" id="top_k" onchange="updateTopK()">
       {% for i in range(1, 11) %}
       <option value="{{ i }}" {% if i == top_k %}selected{% endif %}>
         {{ i }} </option>
@@ -44,13 +44,16 @@
     <div class="model-grid">
       {% for model in models %}
       <label class="model-card"> 
-          <input type="radio" name="selected_model" value="{{ model }}"
+          <input type="radio" name="selected_model" value="{{ model.name }}"
               {% if model.filename == selected_model %}checked{% endif %}>
           <img src="{{ model.url }}" alt="{{ model.name }}">
           <p>{{ model.name }}</p>
       </label>
       {% endfor %}
     </div>
+    <button id="findButton" type="button" {% if not selected_model %}disabled{% endif %}>
+    Найти похожие модели
+  </button>
   </div>
   {% endif %}
 </form>
@@ -62,35 +65,72 @@
 </form>
 
 <!-- результаты поиска to be continued -->
-
+{% if similar_models %}
+<div class="results-section">
+  <h3 class="results-title"> Топ {{ top_k }} похожих моделей:</h3>
+  <div class="model-grid">
+     {% for model in similar_models %}
+     <div class="model-card">
+      <img src="{{ model.url }}" alt="{{ model.name}}">
+      <p> {{ model.name }} {{ model.category }}</p>
+      <p> Расстояние: {{ "%.2f"|format(model.distance) }}</p>
+     </div>
+     {% endfor %}
+  </div>
+</div>
+{% endif %}
 
 <script>
   //отправка формы при выборе модели
   function handleModelSelection(event) {
     const selectedModel = event.target.value;
-    const modelForm = document.getElementById(modelForm);
+    const modelForm = document.getElementById('modelForm');
     modelForm.querySelector('input[name="selected_model"]').value = selectedModel;
     highlightSelectedCard(event.target);
-    modelForm.submit();
+    const findButton = document.getElementById('findButton');
+    if (findButton) {
+        findButton.disabled = false;
+    }
   }
+
+  function updateTopK() {
+    const topKValue = document.getElementById('top_k').value;
+    const modelForm = document.getElementById('modelForm');
+    modelForm.querySelector('input[name="top_k"]').value = topKValue;
+}
 
   function highlightSelectedCard(radioButton) {
     document.querySelectorAll('.model-card').forEach(card => {
       card.classList.remove('selected');
     });
-
-    radioButton.closest('.moel-card').classList.add('selected');
-
+    if (radioButton) {
+        radioButton.closest('.model-card').classList.add('selected'); 
+    }
   }
+
+  function handleFindClick() {
+    const modelForm = document.getElementById('modelForm');
+    const findButton = document.getElementById('findButton');
+    if (findButton) {
+        findButton.innerHTML = 'Поиск...';
+        findButton.disabled = true;
+    }
+    modelForm.submit();
+}
+
   document.addEventListener('DOMContentLoaded', function() {
     const radioButtons = document.querySelectorAll('input[name="selected_model"]');
-    
     radioButtons.forEach(radio => {
       radio.addEventListener('change', handleModelSelection);
       if (radio.checked) {
         highlightSelectedCard(radio);
       }
     });
+    const findButton = document.getElementById('findButton');
+    if (findButton) {
+        findButton.addEventListener('click', handleFindClick);
+        findButton.disabled = !document.querySelector('input[name="selected_model"]:checked');
+    }
   });
 </script>
 

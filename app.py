@@ -25,18 +25,18 @@ def get_categories():
     return [d for d in os.listdir(data_path) 
             if os.path.isdir(os.path.join(data_path, d))]
 
-def get_jpeg_models(category):
-    jpeg_path = os.path.join(data_path, category, "JPEG")
-    if not os.path.exists(jpeg_path):
+def get_image_models(category):
+    image_path = os.path.join(data_path, category, "JPEG")
+    if not os.path.exists(image_path):
         return []
     return [
         {
             'filename': f,
-            'name': f.replace('.jpg', ''),
+            'name': os.path.splitext(f)[0],
             'url': url_for('serve_model_image', category=f'{category}/JPEG', filename=f)
         }
-        for f in os.listdir(jpeg_path)
-        if f.lower().endswith(('.jpg', '.jpeg'))
+        for f in os.listdir(image_path)
+        if f.lower().endswith(('.jpg', '.jpeg', '.png'))
     ]
 
 def get_models_in_category(category):
@@ -70,17 +70,18 @@ def format_similar_models(results):
     for item in results[0]: 
         model_name = item['name'].replace('.bin', '')
         category = item['label']
-        jpeg_path = os.path.join(category, "JPEG", f"{model_name}.jpg")
-        full_path = os.path.join(data_path, jpeg_path)
-        
-        if os.path.exists(os.path.join(data_path, jpeg_path)):
-            formatted_list.append({
-                'name': model_name,
-                'category': category,
-                'url': url_for('serve_model_image', category=f'{category}/JPEG', 
-                               filename=f'{model_name}.jpg'),
-                'distance': item['distance']
-            })
+        for ext in ['.jpg', '.jpeg', '.png']:
+            image_path = os.path.join(category, "JPEG", f"{model_name}{ext}")
+            full_path = os.path.join(data_path, image_path)
+            if os.path.exists(full_path):
+                formatted_list.append({
+                    'name': model_name,
+                    'category': category,
+                    'url': url_for('serve_model_image', category=f'{category}/JPEG', 
+                                filename=f'{model_name}{ext}'),
+                    'distance': item['distance']
+                })
+                break
     return formatted_list
 
 @app.route("/", methods=['GET', 'POST'])
@@ -100,7 +101,7 @@ def index():
         selected_model = request.form.get('selected_model')
 
         if selected_category and not selected_model:
-            models = get_jpeg_models(selected_category)
+            models = get_image_models(selected_category)
             if not models:
                 error = f"No jpeg models found in category {selected_category}"
 
